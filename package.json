@@ -1,0 +1,15 @@
+{
+  "name": "zaizai-home-ai-prototype",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Zaizai Home AI companion prototype with deployable Node server.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js && node --check app.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "UNLICENSED"
+}

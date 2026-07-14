@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f5f2eb" />
+  <title>在在家园</title>
+  <link rel="stylesheet" href="styles.css?v=chat-motion-polish-20260707" />
+</head>
+<body>
+  <div class="device">
+    <div class="screen">
+      <div class="status-bar" aria-hidden="true">
+        <span id="statusClock">9:41</span>
+        <span class="island"></span>
+        <span>5G&nbsp;&nbsp;86%</span>
+      </div>
+
+      <section class="splash is-playing" id="splash" aria-label="在在家园开场动画">
+        <div class="splash-content">
+          <p class="splash-kicker">温柔回应每一次呼唤</p>
+          <h1>在在家园</h1>
+          <div class="time-scene" aria-hidden="true">
+            <span class="time-label time-label-left">6:00</span>
+            <span class="time-label time-label-top">12:00</span>
+            <span class="time-label time-label-right">18:00</span>
+            <div class="clock-arc"></div>
+            <span class="time-dot dot-left"></span>
+            <span class="time-dot dot-top"></span>
+            <span class="time-dot dot-right"></span>
+            <span class="needle needle-cool"></span>
+            <span class="needle needle-warm"></span>
+            <div class="zaizai-lamp">
+              <span class="lamp-glow"></span>
+              <span class="lamp-face"><i></i><i></i></span>
+              <span class="lamp-neck"></span>
+              <span class="lamp-base"></span>
+            </div>
+          </div>
+          <button class="enter-button" id="enterButton" type="button">
+            <span>进入家园</span>
+            <b aria-hidden="true">→</b>
+          </button>
+        </div>
+      </section>
+
+      <main class="app home-theme" id="app">
+        <header class="app-header">
+          <div>
+            <h1>在在家园</h1>
+            <p class="eyebrow">家庭陪伴助手</p>
+          </div>
+          <button class="profile-button" type="button" aria-label="家属端个人中心">家属端</button>
+        </header>
+
+        <section id="home" class="page active">
+          <article class="welcome-panel">
+            <div class="welcome-copy">
+              <span class="status-chip"><i></i> 在在陪伴中</span>
+              <h2>今天，<br />也有在在陪伴</h2>
+              <p id="homeStats">在在已完成 8 次温柔回应，老人今天整体情绪平稳。</p>
+            </div>
+            <img src="assets/product-main.png" alt="在在陪伴设备" />
+          </article>
+
+          <div class="section-heading">
+            <div>
+              <h2>值得关注的变化</h2>
+              <p class="eyebrow">今日概览</p>
+            </div>
+            <span class="date-label" id="homeDate">7月6日</span>
+          </div>
+
+          <div class="summary-grid">
+            <button class="summary-item mood" type="button" data-summary="mood">
+              <span class="summary-icon">☺</span>
+              <div><b id="homeMoodLabel">情绪平稳</b><small id="homeMoodSub">较昨日更放松</small></div>
+              <strong id="homeMoodStatus">良好</strong>
+            </button>
+            <button class="summary-item memory" type="button" data-summary="memory">
+              <span class="summary-icon" aria-label="照片">▧</span>
+              <div><b id="homeMemoryLabel">主动看了合照</b><small id="homeMemorySub">停留约 6 分钟</small></div>
+              <strong id="homeMemoryStatus">新发现</strong>
+            </button>
+            <button class="summary-item sleep" type="button" data-summary="sleep">
+              <span class="summary-icon" aria-label="夜间">☾</span>
+              <div><b id="homeSleepLabel">傍晚轻微焦虑</b><small id="homeSleepSub">暖光安抚已启动</small></div>
+              <strong id="homeSleepStatus">已照护</strong>
+            </button>
+          </div>
+
+          <div class="section-heading compact">
+            <div>
+              <h2>今日时间锚点</h2>
+              <p class="eyebrow">陪伴节奏</p>
+            </div>
+          </div>
+          <div class="timeline">
+            <article>
+              <time>06:00</time>
+              <span class="timeline-dot morning"></span>
+              <div><b>晨间唤醒</b><p>轻柔问候与今日人物提醒</p></div>
+              <span class="done">已完成</span>
+            </article>
+            <article>
+              <time>14:00</time>
+              <span class="timeline-dot noon"></span>
+              <div><b>回忆陪伴</b><p>播放老歌，讲述家庭照片</p></div>
+              <span class="done">已完成</span>
+            </article>
+            <article class="current">
+              <time>18:00</time>
+              <span class="timeline-dot evening"></span>
+              <div><b>傍晚安抚</b><p>暖光模式与熟悉话语陪伴</p></div>
+              <span class="ongoing">进行中</span>
+            </article>
+          </div>
+          <section class="summary-detail" id="summaryDetail" hidden>
+            <button class="detail-back" id="summaryBack" type="button" aria-label="返回今日概览">←</button>
+            <div class="page-title">
+              <h2 id="summaryTitle"></h2>
+              <p class="eyebrow" id="summaryEyebrow"></p>
+              <p id="summaryDescription"></p>
+            </div>
+            <div class="detail-records" id="summaryRecords"></div>
+          </section>
+        </section>
+
+        <section id="chat" class="page chat-page">
+          <div class="chat-canvas mood-soothe time-day" id="chatCanvas">
+            <div class="chat-product-image">
+              <img src="assets/product-happy-device.png" alt="在在家园产品图">
+            </div>
+            <div class="dialog-list" id="dialogList" aria-live="polite"></div>
+            <div class="chat-composer">
+              <div class="composer-input-wrap">
+                <textarea id="elderInput" aria-label="输入老人可能说的话" placeholder="说点什么..."></textarea>
+                <div class="composer-actions">
+                  <button class="voice-button" id="voiceButton" type="button" aria-label="语音输入"><span class="mic-icon"></span></button>
+                  <button class="send-button" id="generateButton" type="button" aria-label="发送" disabled>
+                    <span class="send-arrow">→</span>
+                    <span class="send-loading"></span>
+                  </button>
+                </div>
+              </div>
+              <div class="sync-state" id="syncState" style="display:none;"></div>
+              <div id="responseText" style="display:none;"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="memory" class="page">
+          <div class="block memory-a">
+            <div class="row"><div><h2>记忆与陪伴规则</h2><p class="sub">家属在这里训练“在在”如何称呼、如何回应、哪些内容需要避开。</p></div><img class="mini-product" src="assets/product-main.png" alt="" /></div>
+            <div class="trainer-panel">
+              <label>老人称呼</label><select id="nickname"><option>王奶奶</option><option>奶奶</option><option>妈妈</option><option>外婆</option><option>爷爷</option></select>
+              <label>回应风格</label><select id="toneSetting"><option>智能型</option><option>安抚型</option><option>回忆型</option><option>陪伴型</option><option>转移注意型</option></select>
+              <div class="grid2"><div><label>回复长度</label><select id="lengthSetting"><option>简短</option><option>极短</option><option>稍详细</option></select></div><div><label>语气强度</label><select id="softnessSetting"><option>更轻柔</option><option>正常</option><option>更积极</option></select></div></div>
+              <label>记忆引用强度</label><select id="memoryWeight"><option>智能引用</option><option>轻度引用</option><option>强记忆唤起</option></select>
+              <label>禁忌内容</label><textarea id="avoidSetting">不要说“你忘了”；不要直接说老人记错了；不要主动强调丈夫已经去世；不要用命令语气</textarea>
+              <div class="rule-preview"><span>当前训练结果</span><p id="rulePreview"></p></div>
+              <div class="strategy">
+                <div><b>通用陪伴优先</b>不在记忆库里的内容也要自然回答，不能说“记忆库里没有”。</div>
+                <div><b>按需引用记忆</b>只有照片、人物、地点、老歌、食物、时间困惑等场景才调用相关记忆。</div>
+                <div><b>避免话术重复</b>参考最近 5 轮对话，换句式、换安抚角度或给一个轻量行动建议。</div>
+              </div>
+            </div>
+          </div>
+          <div class="block memory-b">
+            <h2>王秀兰奶奶的记忆库</h2><p class="sub">当前为演示用预设记忆；正式产品中可由家属继续补充和修改。</p><div class="memory-groups" id="memoryGroups"></div><div class="memory-form">
+              <label>补充记忆类型</label>
+              <select id="memoryType"><option>人物</option><option>照片</option><option>事件</option><option>喜好</option><option>禁忌</option><option>安抚方式</option></select>
+              <label>记忆标题</label>
+              <input id="memoryTitle" placeholder="例如：外孙安安" />
+              <label>记忆内容</label>
+              <textarea id="memoryContent" placeholder="例如：安安今年上小学，王奶奶很喜欢听他说学校里的事。"></textarea>
+              <button class="primary" id="addMemory" type="button">添加到记忆库</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="syncPage" class="page">
+          <div class="page-title">
+            <h2>在在设备</h2>
+            <p class="eyebrow">设备与家人保持连接</p>
+          </div>
+          <article class="device-panel">
+            <img src="assets/product-main.png" alt="客厅里的在在设备" />
+            <div>
+              <span class="online"><i></i> 在线</span>
+              <h3>客厅 · 在在 01</h3>
+              <p>今日已同步 8 条话术、12 个记忆素材</p>
+            </div>
+          </article>
+          <div class="section-heading compact"><div><h2>陪伴记录</h2><p class="eyebrow">最近动态</p></div></div>
+          <div class="activity-list" id="activityList">
+            <article><time>18:10</time><div><b>傍晚暖光已启动</b><p>使用短句安抚，避免纠正“想回家”的表达。</p></div></article>
+            <article><time>14:45</time><div><b>老人主动查看家庭合照</b><p>建议补充照片中的人物称呼。</p></div></article>
+          </div>
+        </section>
+
+        <section id="community" class="page">
+          <div class="page-title">
+            <h2>互助社区</h2>
+            <p class="eyebrow">一起把陪伴做得更好</p>
+            <p>匿名分享照护经验，把有用的方法改写成自家的陪伴话术。</p>
+          </div>
+          <div class="community-list">
+            <article>
+              <button class="topic-tag" type="button" data-topic="傍晚焦虑">傍晚焦虑</button>
+              <h3>老人总说要回老家，怎么回应更温和？</h3>
+              <p>先承认想家的感受，再用熟悉物件稳定当下，不争辩“这里就是家”。</p>
+              <button type="button" data-template="你是想念熟悉的地方了吧。我陪你坐一会儿，我们慢慢看看老照片。">改写为我家话术</button>
+            </article>
+            <article>
+              <button class="topic-tag" type="button" data-topic="照片唤起">照片唤起</button>
+              <h3>看照片时，先讲画面，不急着追问名字</h3>
+              <p>从颜色、笑脸和饭菜等低压力线索开始，比直接考问记忆更安心。</p>
+              <button type="button" data-template="这张照片看起来真热闹，大家都靠得很近。我们先看看桌上的菜和大家的笑脸。">改写为我家话术</button>
+            </article>
+          </div>
+          <div class="rewrite-result" id="rewriteResult">选择一条经验，在在会把它整理成适合自家的陪伴话术。</div>
+          <section class="community-topic" id="communityTopic" hidden>
+            <button class="topic-back" id="topicBack" type="button" aria-label="返回互助社区">←</button>
+            <div class="page-title">
+              <h2 id="topicTitle"></h2>
+              <p class="eyebrow">相关经验分享</p>
+              <p id="topicDescription"></p>
+            </div>
+            <div class="community-list topic-posts" id="topicPosts"></div>
+          </section>
+        </section>
+      </main>
+
+      <nav class="bottom-nav" aria-label="主要导航">
+        <button class="active" type="button" data-tab="home"><span class="nav-face" aria-hidden="true"><i></i><i></i></span><b>首页</b></button>
+        <button type="button" data-tab="chat"><span class="nav-face" aria-hidden="true"><i></i><i></i></span><b>对话</b></button>
+        <button type="button" data-tab="memory"><span class="nav-face" aria-hidden="true"><i></i><i></i></span><b>记忆</b></button>
+        <button type="button" data-tab="syncPage"><span class="nav-face" aria-hidden="true"><i></i><i></i></span><b>设备</b></button>
+        <button type="button" data-tab="community"><span class="nav-face" aria-hidden="true"><i></i><i></i></span><b>互助</b></button>
+      </nav>
+    </div>
+  </div>
+  <script src="app.js?v=chat-motion-polish-20260707"></script>
+</body>
+</html>
