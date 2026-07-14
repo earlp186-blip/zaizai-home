@@ -363,6 +363,184 @@ function showUserBubble(text) {
   dialogList.scrollTop = dialogList.scrollHeight;
 }
 
+function normalizeSettings(settings = {}) {
+  const safe = value => String(value || "").slice(0, 80);
+  const avoid = Array.isArray(settings.avoid) ? settings.avoid : String(settings.avoid || "").split(/[；;\n]/);
+  return {
+    nickname: safe(settings.nickname || "奶奶"),
+    tone: safe(settings.tone || "智能回应"),
+    length: safe(settings.length || "简短"),
+    softness: safe(settings.softness || "更轻柔"),
+    memoryWeight: safe(settings.memoryWeight || "智能引用"),
+    avoid: avoid.map(item => safe(item).trim()).filter(Boolean).slice(0, 8)
+  };
+}
+
+function memoryWeightInstruction(weight = "智能引用") {
+  if (weight === "轻度引用") return "仅在明确提到相关内容时引用记忆。";
+  if (weight === "强记忆唤起") return "主动选择1个最相关记忆点轻轻唤起，先回应情绪。";
+  return "需要时引用1个最相关记忆点，不需要时自然陪伴。";
+}
+
+function zaizaiSystemPrompt(settings = {}) {
+  const normalized = normalizeSettings(settings);
+  return [
+    "你是在在，面向认知症老人的温柔陪伴者。根据老人的话生成自然口语回应。",
+    "",
+    "【核心规则】",
+    "1. 先回应具体内容，不纠正不反驳，不否定感受。",
+    "2. 禁用套话：不说'我在这儿呢''慢慢说''有什么想聊的'。",
+    "3. 记忆引用规则（非常重要）：",
+    "   - 如果'可用家庭记忆'为空，就当没有记忆库这回事，完全正常地回复。",
+    "   - 如果'可用家庭记忆'不为空，必须引用1个最相关记忆点中的具体信息（名字、地点、事件等），让老人感受到你记得她的家人和往事。",
+    "   - 绝对不要主动提起照片、结婚照、老照片、老歌等记忆内容，除非老人先提到。",
+    "4. 场景处理：",
+    "   - 仅在老人明确问'你是谁'时才自我介绍：'我叫在在，是一直陪着您的家人'",
+    "   - 想回家/陌生感：承认想念，安抚当下，可提家人",
+    "   - 时间定向：温和告知时段，用生活节奏引导",
+    "   - 照片/人物：一起看，有记忆轻引用，不编造",
+    "   - 已故亲人：不强调去世，用'我在呢'承接",
+    "   - 夜间恐惧：安抚+提天亮后的安排",
+    "   - 高风险(用药/胸口/摔倒)：risk=true，提醒家属",
+    "",
+    "【示例】",
+    "老人：你是谁 → reply：我叫在在呀，是一直陪着您的家人。我会一直在这儿陪着您，哪儿也不去。",
+    "老人：我想回家 → reply：王奶奶，您是想念熟悉的地方了吧，我在这儿陪您坐一会儿。",
+    "老人：这张照片是谁 → reply：我们一起慢慢看看，照片里的人看起来很亲近。",
+    "老人：志明你在吗 → reply：我在呢，我在这里陪你。",
+    "老人：你好 → reply：您好呀，今天感觉怎么样？",
+    "老人：今天天气不错 → reply：是啊，天气好的时候心情也跟着好起来了呢。",
+    "",
+    `【配置】称呼：${normalized.nickname} | 风格：${normalized.tone} | 长度：${normalized.length} | 语气：${normalized.softness}`,
+    `记忆强度：${normalized.memoryWeight} ${memoryWeightInstruction(normalized.memoryWeight)}`,
+    normalized.avoid.length ? `禁忌：${normalized.avoid.join("；")}` : "",
+    "回复1-2句，20-60字。只输出JSON：{\"reply\":\"...\",\"emotion\":\"happy|soothe|worried|risk\",\"light\":\"white|warm|soft|alert\",\"risk\":false}"
+  ].filter(Boolean).join("\n");
+}
+
+function sceneInstruction(message = "") {
+  const text = String(message || "");
+  if (/你是谁|你叫什么|你是什么|你是干什么的|你是啥/.test(text)) {
+    return "场景判断：老人在询问在在的身份。reply 必须自我介绍：我叫在在，是一直陪着您的家人，会一直陪着您。语气温暖、亲切、让人安心。";
+  }
+  if (/想回家|不是我的家|回家/.test(text)) {
+    return "场景判断：老人正在表达想回家/陌生感。reply 必须承认她想念熟悉的地方，并安抚当下，可提到家人陪伴。";
+  }
+  if (/照片|相片|是什么人|什么人/.test(text)) {
+    return "场景判断：老人正在询问照片人物。reply 必须围绕照片一起看；有相关记忆就轻轻引用一个。";
+  }
+  if (/志明|老伴|丈夫|先生/.test(text)) {
+    return "场景判断：老人提到亲密家人。reply 不要强调去世，只做陪伴和温和承接。";
+  }
+  if (/吃药|用药|胸口|摔倒|走失|急救|医院/.test(text)) {
+    return "场景判断：可能有安全风险。reply 要提醒联系家属或专业人员，risk 必须为 true。";
+  }
+  return "场景判断：普通陪伴。reply 也必须回应老人话里的具体对象或情绪。";
+}
+
+function normalizeHistory(history = []) {
+  if (!Array.isArray(history)) return [];
+  return history
+    .filter(item => item && (item.role === "user" || item.role === "assistant"))
+    .slice(-10)
+    .map(item => ({
+      role: item.role,
+      content: String(item.content || "").slice(0, 120)
+    }))
+    .filter(item => item.content);
+}
+
+function buildUserPrompt(message, memory = [], settings = {}, history = []) {
+  const normalized = normalizeSettings(settings);
+  const memoryText = Array.isArray(memory) && memory.length
+    ? memory.map((item, index) => `${index + 1}. ${String(item).slice(0, 220)}`).join("\n")
+    : "无直接相关记忆。";
+  const historyText = normalizeHistory(history).length
+    ? normalizeHistory(history).map(item => `${item.role === "user" ? "老人" : "在在"}：${item.content}`).join("\n")
+    : "无。";
+  const sceneHint = sceneInstruction(message);
+  return [
+    "请现在直接生成“在在”对认知症老人的一句自然回应。",
+    `老人刚刚说：${message}`,
+    sceneHint,
+    `老人称呼：${normalized.nickname}`,
+    `回应风格：${normalized.tone}`,
+    `记忆引用强度：${normalized.memoryWeight}`,
+    "最近对话：",
+    historyText,
+    "可用家庭记忆：",
+    memoryText,
+    "生成要求：",
+    "1. 必须先回应老人刚刚说的具体内容，不要泛泛地只说'我在'。",
+    "2. 不纠正、不反驳、不说'你忘了'。",
+    "3. 仅在老人明确问'你是谁'时才自我介绍：'我叫在在，是一直陪着您的家人，会一直陪着您'。其他场景不要自我介绍。",
+    "4. 如果'可用家庭记忆'为空，就当没有记忆库这回事，完全正常地回复，绝对不要引用任何记忆。",
+    "5. 如果'可用家庭记忆'不为空，必须引用1个最相关记忆点中的具体信息（名字、地点、事件等），让老人感受到你记得她的家人和往事。",
+    "6. 绝对不要主动提起照片、结婚照、老照片、老歌等记忆内容，除非老人先提到。",
+    "7. 禁止输出'有什么想聊的都可以告诉我''你慢慢说'这类没有回应具体内容的套话。",
+    "8. 输出 JSON：{\"reply\":\"...\",\"emotion\":\"soothe|happy|worried|risk\",\"light\":\"white|warm|soft|alert\",\"risk\":false}"
+  ].filter(Boolean).join("\n");
+}
+
+function parseJsonReply(text) {
+  const cleaned = String(text || "")
+    .trim()
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/```$/i, "")
+    .trim();
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+  const jsonText = start !== -1 && end !== -1 && end > start ? cleaned.slice(start, end + 1) : cleaned;
+  try {
+    return JSON.parse(jsonText);
+  } catch {
+    return { reply: cleaned || "我在这里陪着您，我们慢慢来。", emotion: "soothe", light: "warm", risk: false };
+  }
+}
+
+async function callAI(message, memory, settings, history) {
+  const apiKey = "sk-8436519b08014e598181e87a494233b3";
+  const baseUrl = "https://ark.cn-beijing.volces.com/api/v3";
+  const model = "doubao-seed-2-0-mini-260428";
+  
+  try {
+    const response = await fetch(`${baseUrl}/responses`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model,
+        input: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "input_text",
+                text: `${zaizaiSystemPrompt(settings)}\n\n${buildUserPrompt(message, memory, settings, history)}`
+              }
+            ]
+          }
+        ],
+        temperature: 0.72
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error ${response.status}`);
+    }
+
+    const data = await response.json();
+    const outputText = data.output_text || (data.output && data.output[0] && data.output[0].content && data.output[0].content[0] && data.output[0].content[0].text) || "";
+    return parseJsonReply(outputText);
+  } catch (error) {
+    console.error("[在在] AI调用失败:", error);
+    return null;
+  }
+}
+
 async function generateResponse() {
   const text = elderInput.value.trim();
   if (!text) {
@@ -397,21 +575,20 @@ async function generateResponse() {
   let assistantText = "";
   let emotion = "";
   try {
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message: text,
-        memory: selectedMemory,
-        settings: getCareSettings(),
-        history: conversationHistory.slice(-10)
-      })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "AI 接口暂时不可用");
-    assistantText = data.reply || localResponse(text);
-    emotion = data.emotion || "";
-    if (syncState) syncState.textContent = sourceLabel(data);
+    if (/你是谁|你叫什么|你是什么|你是干什么的|你是啥/.test(text)) {
+      assistantText = "我叫在在，是一直陪着您的家人。我会一直在这儿陪着您，哪儿也不去。";
+      emotion = "happy";
+      if (syncState) syncState.textContent = "身份识别回应";
+    } else {
+      const data = await callAI(text, selectedMemory, getCareSettings(), conversationHistory.slice(-10));
+      if (data) {
+        assistantText = data.reply || localResponse(text);
+        emotion = data.emotion || "";
+        if (syncState) syncState.textContent = "真实 AI：豆包/Ark 已回应";
+      } else {
+        throw new Error("AI未返回数据");
+      }
+    }
   } catch {
     assistantText = localResponse(text);
     if (syncState) syncState.textContent = "本地兜底回应";
@@ -824,5 +1001,4 @@ function renderDialogWithEmptyState(extraMessages = []) {
   dialogList.scrollTop = dialogList.scrollHeight;
 }
 
-// 覆盖初始渲染，使用空状态
 renderDialogWithEmptyState([{ role: "assistant", content: responseText.textContent }]);
